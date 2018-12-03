@@ -1,0 +1,15 @@
+msc {
+  c [label="Client"],
+  p1 [label="First path node"],
+  pn [label="n'th path node"],
+  a [label="Announce node"];
+
+  c -> p1 [label="AnnounceRequest\n(no ping_id)"];
+  p1 -> c [label="AnnounceResponce"];
+  c box c [label="Add the node to the announce list"];
+  c box c [label="Send\nAnnounceRequest to “good” nodes from the responce"];
+  c -> pn [label="AnnounceRequest\n(no ping_id)"];
+  ...;
+  c -> a [label="AnnounceRequest"];
+  a -> c [label="AnnounceResponce"];
+}

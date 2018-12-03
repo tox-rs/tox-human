@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Onion client (UDP)</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="pandoc.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: ["input/TeX", "output/HTML-CSS"],
+      MathML: {
+        extensions: ["content-mathml.js"]
+      },
+      "HTML-CSS": { webFont: "Neo-Euler" }
+    });
+  </script>
+</head>
+<body>
+<header>
+<h1 class="title">Onion client (UDP)</h1>
+</header>
+<p>This is description of onion layer in Tox.</p>
+<h2>Paths</h2>
+<p>Onion routing can be described using this chart:</p>
+<object data="static/path.svg" type="image/svg+xml">
+</object>
+<p>To send a message via an onion path, first we construct the path by choosing three random nodes. Then, we put the message in several layers:</p>
+<ol>
+<li><code>OnionRequest2</code> contains the address of the message receiver and the message encrypted with the third's node key</li>
+<li><code>OnionRequest1</code> contains the address of the second node and <code>OnionRequest2</code> encrypted with the second's node key, and</li>
+<li><code>OnionRequest0</code> contains the address of the first node and encrypted <code>OnionRequest0</code></li>
+</ol>
+<p>A path node receives a message, decrypts the payload, attaches <code>OnionReturn</code> and sends the result to the next node in the path.</p>
+<p>An <code>OnionReturn</code> of the n'th node is the pair of node's <code>IP_Port</code> and <code>OnionReturn</code> of the previous node (if it exists), encrypted with the n'th node's key. It allows the receiver to send a responce to the sender using the same onion path.</p>
+<h2>Client announce</h2>
+<object data="static/announce_start.svg" type="image/svg+xml">
+</object>
+</body>
+</html>
