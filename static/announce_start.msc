@@ -5,11 +5,11 @@ msc {
   a [label="Announce node"];
 
   c -> p1 [label="AnnounceRequest\n(no ping_id)"];
-  p1 -> c [label="AnnounceResponce"];
+  p1 -> c [label="AnnounceResponse"];
   c box c [label="Add the node to the announce list"];
-  c box c [label="Send\nAnnounceRequest to “good” nodes from the responce"];
+  c box c [label="Send\nAnnounceRequest to “good” nodes from the response"];
   c -> pn [label="AnnounceRequest\n(no ping_id)"];
   ...;
   c -> a [label="AnnounceRequest"];
-  a -> c [label="AnnounceResponce"];
+  a -> c [label="AnnounceResponse"];
 }
