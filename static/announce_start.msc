@@ -9,7 +9,9 @@ msc {
   c box c [label="Add the node to the announce list"];
   c box c [label="Send\nAnnounceRequest to “good” nodes from the response"];
   c -> pn [label="AnnounceRequest\n(no ping_id)"];
+  pn -> c [label="AnnounceResponse"];
   ...;
+  --- [label="On the next iteration of do_announce()"];
   c -> a [label="AnnounceRequest"];
   a -> c [label="AnnounceResponse"];
 }
