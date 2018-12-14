@@ -1,7 +1,8 @@
 extensions=tex_math_dollars+mmd_title_block+link_attributes
-opts=-t html5 -f markdown_github+$extensions -H magic.head -s -c pandoc.css --mathjax -V lang=en
+opts=-t html5 -f markdown_github+$extensions -H magic.head -s -c static/pandoc.css --mathjax -V lang=en
 
 rule pd
   command = pandoc $in -o $out $opts
 
-build onion.html: pd onion.md | magic.head
+build index.html: pd src/index.md | magic.head
+build onion_client.html: pd src/onion_client.md | magic.head

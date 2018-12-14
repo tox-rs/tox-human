@@ -15,10 +15,10 @@ msc {
     n2 -> n3 [ label="OnionRequest2" ];
     n3 -> rx [ label="(Request)" ];
 
-    --- [ label="Responce" ];
+    --- [ label="Response" ];
 
     rx -> n3 [ label="OnionResponse3" ];
     n3 -> n2 [ label="OnionResponse2" ];
     n2 -> n1 [ label="OnionResponse1" ];
-    n1 -> tx [ label="(Responce)" ];
+    n1 -> tx [ label="(Response)" ];
 }
