@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Packets of messenger</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: ["input/TeX", "output/HTML-CSS"],
+      MathML: {
+        extensions: ["content-mathml.js"]
+      },
+      "HTML-CSS": { webFont: "Neo-Euler" }
+    });
+  </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Packets of messenger</h1>
+</header>
+<p>This is a description of packets of messenger layer of Tox.</p>
+<h2 id="file_data">FILE_DATA</h2>
+<p>FileData packet is used to transfer sender's data file to a friend. It holds <code>file_id</code> which is one byte long, means that a tox client can send maximum 256 files concurrently. Also it means that two friends can send 512 files to each other concurrently.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x52</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>file_id</code></td>
+</tr>
+<tr class="odd">
+<td><code>0..1371</code></td>
+<td>file data piece</td>
+</tr>
+</tbody>
+</table>
+<p>One FileData packet can hold maximum 1371 bytes. To send whole file which is bigger than 1371 bytes, messenger's file sending function need to be called many times. Multiple calling file sending function of messenger must be done by the user of tox-rs, Tox-rs provides only an api for sending a chunk of file data. Also, assembling chunks of file data received by tox-rs must be done by the user of tox-rs. File sending module always checks the length of sent bytes by length of file to send. When the sent bytes exceed the length of file to send, it must stop sending file data.</p>
+<h2 id="file_control">FILE_CONTROL</h2>
+<p>This packet is used to control transferring sender's file to a friend. If a peer of connection wants to pause, kill, seek or accept transferring file, it must use this packet.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x51</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td>Whether it is sending or receiving, 0 = sender, 1 = receiver</td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>file_id</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td>Control type: 0 = accept, 1 = pause, 2 = kill, 3 = seek</td>
+</tr>
+<tr class="odd">
+<td><code>8</code></td>
+<td>Seek parameter which is only included when <code>control type</code> is seek(3)</td>
+</tr>
+</tbody>
+</table>
+<p>When messenger layer is called by user using FILE_CONTROL, it checks:</p>
+<ul>
+<li>Sending direction value is <code>0</code> or <code>1</code> means 0 = sender, 1 = receiver, others = error</li>
+<li>Retrieves <code>file transfer object</code> which holds info of file transferring, if it fails then send FileControl packet to a friend to kill the session.</li>
+<li><code>file transfer object</code> is managed by <code>file_id</code> and <code>friend_id</code> and <code>sending direction</code>.</li>
+</ul>
+<p>FILE_CONTROL do following things:</p>
+<ul>
+<li>Accept: Accept the request of file sending from a friend. It does:
+<ul>
+<li>checks if status is not <code>Accepted</code> if it is not <code>Accepted</code> then
+<ul>
+<li>change status to <code>Transferring</code></li>
+</ul></li>
+<li>else checks:
+<ul>
+<li>if status is <code>Pause by friend</code> then toggle status of <code>Pause by friend</code></li>
+<li>else error because friend asked me to resume file transfer that wasn't paused.</li>
+</ul></li>
+<li>updates <code>file transfer object</code></li>
+</ul></li>
+<li>Pause: Pause the transfer. It does:
+<ul>
+<li>checks if pause status is <code>Paused by friend</code> or transfer status is not <code>Transferring</code> then error because friend asked me to pause transfer that is already paused.</li>
+<li>toggles pause status</li>
+<li>updates <code>file transfer object</code></li>
+</ul></li>
+<li>Kill: Kill the transfer session. It does:
+<ul>
+<li>updates <code>file transfer object</code></li>
+<li>set transfer status to <code>None</code></li>
+<li>decreases count of friend's number of sending files</li>
+</ul></li>
+<li>Seek: Seek to the position. It does:
+<ul>
+<li>checks if the position is u64, means position is 8 bytes long
+<ul>
+<li>else error because expected 8 bytes</li>
+</ul></li>
+<li>checks if the transfer status is <code>Accepted</code> and the sender of this packet is receiver of file data
+<ul>
+<li>else error because Seek must be used to session <code>Accepted</code> and Seek packet can only be sent by receiver to seek before resuming broken transfers.</li>
+</ul></li>
+<li>checks if the position exceeds the file size, if it exceeds
+<ul>
+<li>error because seek position exceeds file size.</li>
+</ul></li>
+<li>set <code>requested position</code> and <code>transferred position</code> to seek position.</li>
+</ul></li>
+<li>else error because invalid file control command.</li>
+</ul>
+<h2 id="typing">TYPING</h2>
+<p>This packet is used to transmit sender's typing status to a friend.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x33</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td>Typing status(0 = not typing, 1 = typing)</td>
+</tr>
+</tbody>
+</table>
+<p>It checks if the data is one bytes, and update typing status to the value of data.</p>
+<h2 id="action">ACTION</h2>
+<p>This packet is used to transmit sender's action message to a friend. Here, action message is a something like an IRC action.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x41</code></td>
+</tr>
+<tr class="even">
+<td><code>0..1372</code></td>
+<td>UTF8 byte string</td>
+</tr>
+</tbody>
+</table>
+<p>It checks if the action message is null, if null then do nothing else sends the action message to the friend.</p>
+<h2 id="message">MESSAGE</h2>
+<p>This packet is used to transmit sender's message to a friend.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x40</code></td>
+</tr>
+<tr class="even">
+<td><code>0..1372</code></td>
+<td>UTF8 byte string</td>
+</tr>
+</tbody>
+</table>
+<p>It checks if the message is null, if null then do nothing else sends the message to the friend.</p>
+<h2 id="status_message">STATUS_MESSAGE</h2>
+<p>This packet is used to transmit sender's status message to a friend. Every time a friend become online or my status message is changed, this packet is sent to the friend or to all friends of mine.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x31</code></td>
+</tr>
+<tr class="even">
+<td><code>0..1007</code></td>
+<td>UTF8 byte string</td>
+</tr>
+</tbody>
+</table>
+<p>If packet is received then call registered callback function to change the status message of the friend and change the status data for the friend.</p>
+<h2 id="user_status">USER_STATUS</h2>
+<p>This packet is used to transmit sender's status to a friend. Every time a friend become online or my status is changed, this packet is sent to the friend or to all friends of mine.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x32</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td>My status(0 = online, 1 = away, 2 = busy)</td>
+</tr>
+</tbody>
+</table>
+<p>When a node receives this packet, it call registered callback function to change the status of the friend.</p>
+</body>
+</html>

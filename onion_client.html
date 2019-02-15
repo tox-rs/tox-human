@@ -5,13 +5,13 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Onion client (UDP)</title>
-  <style type="text/css">
+  <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
       span.underline{text-decoration: underline;}
       div.column{display: inline-block; vertical-align: top; width: 50%;}
   </style>
-  <link rel="stylesheet" href="static/pandoc.css">
+  <link rel="stylesheet" href="static/pandoc.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
@@ -27,11 +27,11 @@
   </script>
 </head>
 <body>
-<header>
+<header id="title-block-header">
 <h1 class="title">Onion client (UDP)</h1>
 </header>
 <p>This is a description of onion layer in Tox.</p>
-<h2>Paths</h2>
+<h2 id="paths">Paths</h2>
 <p>Onion routing can be described using this chart:</p>
 <object data="static/path.svg" type="image/svg+xml">
 </object>
@@ -43,7 +43,7 @@
 </ol>
 <p>A node that belongs to the path receives a message, decrypts the payload, attaches <code>OnionReturn</code> and sends the result to the next node in the path.</p>
 <p>An <code>OnionReturn</code> of the n'th node is the pair of <code>IP_Port</code> and <code>OnionReturn</code> of the previous node (if it exists), encrypted with the n'th node's key. It allows the receiver to send a response to the sender using the same onion path.</p>
-<h2>Client announce</h2>
+<h2 id="client-announce">Client announce</h2>
 <p>An iteration of self announce:</p>
 <ol>
 <li>Clean up the <code>announce_list</code> from timeouted nodes</li>
@@ -133,7 +133,7 @@
 <p>A sequence chart for the beginning of self announce process (messages are sent via onion):</p>
 <object data="static/announce_start.svg" type="image/svg+xml">
 </object>
-<h2>Friend search and DHTPK announce</h2>
+<h2 id="friend-search-and-dhtpk-announce">Friend search and DHTPK announce</h2>
 <p>The overall process has two steps:</p>
 <ul>
 <li>First, we use announce requests to find announce nodes that stores paths to our friend
@@ -180,7 +180,7 @@
 <li>Send the request via the onion path</li>
 </ol></li>
 </ol>
-<h2>Notes on data structures</h2>
+<h2 id="notes-on-data-structures">Notes on data structures</h2>
 <p>Both <code>path_nodes</code> and <code>announce_list</code> are arrays of limited size. But the way they are updated are different.</p>
 <p>When <code>path_nodes</code> is full, adding a new element replaces an old one in a circular manner: first adding an element replaces <code>path_nodes[0]</code>, then <code>path_nodes[1]</code>, and so on til we get to the end of the array. After that, we begin again with <code>path_nodes[0]</code>.</p>
 <p><code>announce_list</code> is different. It is sorted by distance to real our public key. When an element is added, it is checked against the farest node. If the element is closer to us than the node, the node is removed and the element is inserted. Otherwise, the element is simply discarded.</p>
@@ -197,7 +197,7 @@ layout DhtPkData {
     [u8; PUBLIC_KEY_SIZE],
     [[u8; PACKED_NODE_SIZE]; 0..MAX_SENT_NODES]
 }</code></pre>
-<h2>Toxcore notes</h2>
+<h2 id="toxcore-notes">Toxcore notes</h2>
 <p>In the C implementation, <code>ping_debt</code> and <code>usage_debt</code> are called <code>unsuccessful_pings</code> and <code>last_path_used_times</code> correspondingly. New names are chosen to represent the meaning of these variables more clearly.</p>
 </body>
 </html>
