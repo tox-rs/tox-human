@@ -146,3 +146,115 @@ Length    | Content
 `1`       | My status(0 = online, 1 = away, 2 = busy)
 
 When a node receives this packet, it call registered callback function to change the status of the friend.
+
+## MSI
+
+MSI(Media Session Interface) is a protocol to manage audio or video calls to a friend(s).
+Payload of msi packet consists of three kind of commands: request, error, capabilities.
+- Request does init_call, push call(start call) or pop call(end call).
+- Error is used to handle errors during processing requests.
+- Capabilities hold the ability of node related with audio, video.
+
+
+##### MSIRequest
+
+```
+enum MSIRequest {
+    REQU_INIT,
+    REQU_PUSH,
+    REQU_POP,
+}
+```
+
+##### MSIError
+
+```
+enum MSIError {
+    MSI_E_NONE,
+    MSI_E_INVALID_MESSAGE,
+    MSI_E_INVALID_PARAM,
+    MSI_E_INVALID_STATE,
+    MSI_E_STRAY_MESSAGE,
+    MSI_E_SYSTEM,
+    MSI_E_HANDLE,
+    MSI_E_UNDISCLOSED,
+}
+```
+
+##### MSICapabilities
+
+```
+enum MSICapabilities {
+    MSI_CAP_S_AUDIO = 4,  // sending audio
+    MSI_CAP_S_VIDEO = 8,  // sending video
+    MSI_CAP_R_AUDIO = 16, // receiving audio
+    MSI_CAP_R_VIDEO = 32, // receiving video
+}
+```
+
+##### MSICallState
+
+```
+enum MSICallState {
+    MSI_CALL_INACTIVE,      // Default
+    MSI_CALL_ACTIVE,
+    MSI_CALL_REQUESTING,    // when sending call invite
+    MSI_CALL_REQUESTED,     // when getting call invite
+} MSICallState;
+```
+
+Protocol: |kind [1 byte]| |size [1 byte]| |value [$size bytes]| |...{repeat}| |0 {end byte}|
+
+Serialized form:
+
+Length    | Content
+--------- | ------
+`1`       | `0x45`
+`0..255`  | payload
+
+Though protocol defines `size` field, actually every commands's size of `value` is 1 byte.
+So, `size` is for the future extension.
+
+This packet structure can permit for a node to send multiple commands in one packet.
+For example a node can send packet to a friend to start call with capabilities and errors.
+The node receiving this packet also can do multiple action on commands in a packet.
+Because `payload` size is 255 bytes long, we can send maximum 255 / 3 = 85 commands in a packet.
+But if there are same kind of commands in a packet, the last command will replace the previous commands.
+
+On receiving this packet, a node does:
+
+- parse packet: parse it to store commands to data structures.
+    - Data structure which holds the result of parsing has 3 fields
+        - `Request` holds request command
+        - `Error` holds error during processing commands.
+        - `Capabilities` holds the abilities related with audio or video of a friend.
+    - If there are same kind of commands in a packet, the last command will replace the previous one.
+- Process the `Request` command in the packet.
+    - Init: init a msi sesstion.
+        - Check if `Capaboilites` is empty, if it is then return with error(`MSI_E_INVALID_MESSAGE`).
+        - If call_state is `MSI_CALL_INACTIVE` then request a call to a friend.
+        - If call_state is `MSI_CALL_ACTIVE` then sends packet containing capabilities of us. This is the situation of a friend re-call us,
+        but we are not terminated with previous call.
+        - If call_state is `MSI_CALL_REQUESTING` or `MSI_CALL_REQUESTED` then return with error(`MSI_E_INVALID_STATE`).
+    - Push: Starts a new call to a friend or change capabilities.
+        - Check if `Capaboilites` is empty, if it is then return with error(`MSI_E_INVALID_MESSAGE`).
+        - If call_state is `MSI_CALL_ACTIVE` then check if capabilities are changed from previous value, if it is then
+        change current call's capabilities.
+        - If call_state is `MSI_CALL_REQUESTING` then  starts a new call
+        - If call_state is `MSI_CALL_INACTIVE` or `MSI_CALL_REQUESTED` then ignore it.
+    - Pop: Ends current call
+        - If there is a error command in the packet then terminates current call.
+        - If call_state is `MSI_CALL_INACTIVE` then it is a impossible case. So, terminates process.
+        - If call_state is `MSI_CALL_ACTIVE` then it is a hang-up of a friend. So, ends call.
+        - If call_state is `MSI_CALL_REQUESTING` then it is a rejection of call by a friend. So, ends call.
+        - If call_state is `MSI_CALL_REQUESTED` then it is a cancelling of a call request by a friend. So, ends call.
+    
+When we need to send a packet to a friend, a node does:
+
+- creates a new message object which is one of these:
+    - Init
+    - Push
+    - Pop
+- adds error if there is an error
+- adds capabilites of us
+- makes a packet and sends it using `NetCrypto`
