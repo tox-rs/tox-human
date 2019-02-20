@@ -29,6 +29,17 @@
 <header id="title-block-header">
 <h1 class="title">Packets of messenger</h1>
 </header>
+<nav id="TOC">
+<ul>
+<li><a href="#file_data">FILE_DATA</a></li>
+<li><a href="#file_control">FILE_CONTROL</a></li>
+<li><a href="#typing">TYPING</a></li>
+<li><a href="#action">ACTION</a></li>
+<li><a href="#message">MESSAGE</a></li>
+<li><a href="#status_message">STATUS_MESSAGE</a></li>
+<li><a href="#user_status">USER_STATUS</a></li>
+</ul>
+</nav>
 <p>This is a description of packets of messenger layer of Tox.</p>
 <h2 id="file_data">FILE_DATA</h2>
 <p>FileData packet is used to transfer sender's data file to a friend. It holds <code>file_id</code> which is one byte long, means that a tox client can send maximum 256 files concurrently. Also it means that two friends can send 512 files to each other concurrently.</p>
@@ -55,7 +66,7 @@
 </tr>
 </tbody>
 </table>
-<p>One FileData packet can hold maximum 1371 bytes. To send whole file which is bigger than 1371 bytes, messenger's file sending function need to be called many times. Multiple calling file sending function of messenger must be done by the user of tox-rs, Tox-rs provides only an api for sending a chunk of file data. Also, assembling chunks of file data received by tox-rs must be done by the user of tox-rs. File sending module always checks the length of sent bytes by length of file to send. When the sent bytes exceed the length of file to send, it must stop sending file data.</p>
+<p>One FileData packet can hold maximum 1371 bytes. To send whole file which is bigger than 1371 bytes, messenger's file sending function need to be called many times. Multiple calling file sending function of messenger must be done by the user of tox protocol, Tox-rs provides only an api for sending a chunk of file data. Also, assembling chunks of file data received by tox protocol must be done by the user of tox protocol. File sending module always checks the length of sent bytes by length of file to send. When the sent bytes exceed the length of file to send, it must stop sending file data.</p>
 <h2 id="file_control">FILE_CONTROL</h2>
 <p>This packet is used to control transferring sender's file to a friend. If a peer of connection wants to pause, kill, seek or accept transferring file, it must use this packet.</p>
 <p>Serialized form:</p>
@@ -124,10 +135,6 @@
 </ul></li>
 <li>Seek: Seek to the position. It does:
 <ul>
-<li>checks if the position is u64, means position is 8 bytes long
-<ul>
-<li>else error because expected 8 bytes</li>
-</ul></li>
 <li>checks if the transfer status is <code>Accepted</code> and the sender of this packet is receiver of file data
 <ul>
 <li>else error because Seek must be used to session <code>Accepted</code> and Seek packet can only be sent by receiver to seek before resuming broken transfers.</li>
@@ -183,7 +190,7 @@
 </tr>
 </tbody>
 </table>
-<p>It checks if the action message is null, if null then do nothing else sends the action message to the friend.</p>
+<p>It checks if the action message is empty, if it is then do nothing else sends the action message to the friend. It is C string.</p>
 <h2 id="message">MESSAGE</h2>
 <p>This packet is used to transmit sender's message to a friend.</p>
 <p>Serialized form:</p>
@@ -205,7 +212,7 @@
 </tr>
 </tbody>
 </table>
-<p>It checks if the message is null, if null then do nothing else sends the message to the friend.</p>
+<p>There is no zero-length or empty string allowed and if it is then do nothing. It is C string.</p>
 <h2 id="status_message">STATUS_MESSAGE</h2>
 <p>This packet is used to transmit sender's status message to a friend. Every time a friend become online or my status message is changed, this packet is sent to the friend or to all friends of mine.</p>
 <p>Serialized form:</p>
@@ -227,7 +234,7 @@
 </tr>
 </tbody>
 </table>
-<p>If packet is received then call registered callback function to change the status message of the friend and change the status data for the friend.</p>
+<p>If packet is received then call registered callback function to change the status message of the friend and change the status data for the friend. It is C string.</p>
 <h2 id="user_status">USER_STATUS</h2>
 <p>This packet is used to transmit sender's status to a friend. Every time a friend become online or my status is changed, this packet is sent to the friend or to all friends of mine.</p>
 <p>Serialized form:</p>

@@ -18,8 +18,8 @@ Length    | Content
 
 One FileData packet can hold maximum 1371 bytes.
 To send whole file which is bigger than 1371 bytes, messenger's file sending function need to be called many times.
-Multiple calling file sending function of messenger must be done by the user of tox-rs, Tox-rs provides only an api for sending a chunk of file data.
-Also, assembling chunks of file data received by tox-rs must be done by the user of tox-rs.
+Multiple calling file sending function of messenger must be done by the user of tox protocol, Tox-rs provides only an api for sending a chunk of file data.
+Also, assembling chunks of file data received by tox protocol must be done by the user of tox protocol.
 File sending module always checks the length of sent bytes by length of file to send.
 When the sent bytes exceed the length of file to send, it must stop sending file data.
 
@@ -66,8 +66,6 @@ FILE_CONTROL do following things:
     - decreases count of friend's number of sending files
     
 - Seek: Seek to the position. It does:
-    - checks if the position is u64, means position is 8 bytes long
-        - else error because expected 8 bytes
     - checks if the transfer status is `Accepted` and the sender of this packet is receiver of file data
         - else error because Seek must be used to session `Accepted` and Seek packet can only be sent by receiver to seek before resuming broken transfers.
     - checks if the position exceeds the file size, if it exceeds
@@ -100,7 +98,8 @@ Length    | Content
 `1`       | `0x41`
 `0..1372` | UTF8 byte string
 
-It checks if the action message is null, if null then do nothing else sends the action message to the friend.
+It checks if the action message is empty, if it is then do nothing else sends the action message to the friend.
+It is C string.
 
 ## MESSAGE
 
@@ -113,7 +112,8 @@ Length    | Content
 `1`       | `0x40`
 `0..1372` | UTF8 byte string
 
-It checks if the message is null, if null then do nothing else sends the message to the friend.
+There is no zero-length or empty string allowed and if it is then do nothing.
+It is C string.
 
 ## STATUS_MESSAGE
 
@@ -130,6 +130,7 @@ Length    | Content
 
 If packet is received then call registered callback function to change the status message of the friend and
 change the status data for the friend.
+It is C string.
 
 ##  USER_STATUS
 
