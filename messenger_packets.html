@@ -31,6 +31,7 @@
 </header>
 <nav id="TOC">
 <ul>
+<li><a href="#file_sendrequest">FILE_SENDREQUEST</a></li>
 <li><a href="#file_data">FILE_DATA</a></li>
 <li><a href="#file_control">FILE_CONTROL</a></li>
 <li><a href="#typing">TYPING</a></li>
@@ -39,9 +40,50 @@
 <li><a href="#status_message">STATUS_MESSAGE</a></li>
 <li><a href="#user_status">USER_STATUS</a></li>
 <li><a href="#msi">MSI</a></li>
+<li><a href="#online">ONLINE</a></li>
+<li><a href="#offline">OFFLINE</a></li>
+<li><a href="#nickname">NICKNAME</a></li>
 </ul>
 </nav>
 <p>This is a description of packets of messenger layer of Tox.</p>
+<h2 id="file_sendrequest">FILE_SENDREQUEST</h2>
+<p>This packet is used to initiate transferring sender's data file or avatar file to a friend. Toxcore doesn't accumulate file chunks, accumulating file chunks is role of client.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x50</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>file_id</code></td>
+</tr>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>file_type</code>(0 = data, 1 = avatar image data)</td>
+</tr>
+<tr class="even">
+<td><code>8</code></td>
+<td><code>file_size</code></td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>file_unique_id</code>(a random symmetric tox key)</td>
+</tr>
+<tr class="even">
+<td><code>0.255</code></td>
+<td><code>file_name</code> as UTF-8 C string</td>
+</tr>
+</tbody>
+</table>
+<p><code>file_type</code> and <code>file_unique_id</code> are sent in big endian format.</p>
 <h2 id="file_data">FILE_DATA</h2>
 <p>FileData packet is used to transfer sender's data file to a friend. It holds <code>file_id</code> which is one byte long, means that a tox client can send maximum 256 files concurrently. Also it means that two friends can send 512 files to each other concurrently.</p>
 <p>Serialized form:</p>
@@ -429,5 +471,60 @@
 <li>adds capabilities sub-packet of us</li>
 <li>creates a msi packet using above object and sends it using <code>NetCrypto</code></li>
 </ul>
+<h2 id="online">ONLINE</h2>
+<p>Sent to a friend when a connection is established.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x18</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="offline">OFFLINE</h2>
+<p>Sent to a friend when deleting the friend. It the friend is a member of a groupchat, we show the node as <code>offline</code>.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x19</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="nickname">NICKNAME</h2>
+<p>Used to send the nickname of the peer to others. Whenever a friend comes online, this packet should be sent or whenever my nickname is changed, this packet should be sent.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x19</code></td>
+</tr>
+<tr class="even">
+<td><code>0..128</code></td>
+<td>UTF-8 C string</td>
+</tr>
+</tbody>
+</table>
 </body>
 </html>

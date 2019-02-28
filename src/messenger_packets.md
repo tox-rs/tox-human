@@ -2,6 +2,24 @@ Title: Packets of messenger
 
 This is a description of packets of messenger layer of Tox.
 
+## FILE_SENDREQUEST
+
+This packet is used to initiate transferring sender's data file or avatar file to a friend.
+Toxcore doesn't accumulate file chunks, accumulating file chunks is role of client.
+
+Serialized form:
+
+Length    | Content
+--------- | ------
+`1`       | `0x50`
+`1`       | `file_id`
+`4`       | `file_type`(0 = data, 1 = avatar image data)
+`8`       | `file_size`
+`32`      | `file_unique_id`(a random symmetric tox key)
+`0.255`   | `file_name` as UTF-8 C string
+
+`file_type` and `file_unique_id` are sent in big endian format.
+
 ## FILE_DATA
 
 FileData packet is used to transfer sender's data file to a friend.
@@ -126,7 +144,7 @@ Serialized form:
 Length    | Content
 --------- | ------
 `1`       | `0x31`
-`0..1007`  | UTF8 byte string
+`0..1007` | UTF8 byte string
 
 If packet is received then call registered callback function to change the status message of the friend and
 change the status data for the friend.
@@ -277,3 +295,34 @@ When we need to send a packet to a friend, a node does:
 - adds error sub-packet if there is an error
 - adds capabilities sub-packet of us
 - creates a msi packet using above object and sends it using `NetCrypto`
+
+## ONLINE
+
+Sent to a friend when a connection is established.
+
+Serialized form:
+
+Length    | Content
+--------- | ------
+`1`       | `0x18`
+
+## OFFLINE
+
+Sent to a friend when deleting the friend. It the friend is a member of a groupchat, we show the node as `offline`.
+
+Serialized form:
+
+Length    | Content
+--------- | ------
+`1`       | `0x19`
+
+## NICKNAME
+
+Used to send the nickname of the peer to others. Whenever a friend comes online, this packet should be sent or whenever my nickname is changed, this packet should be sent.
+
+Serialized form:
+
+Length    | Content
+--------- | ------
+`1`       | `0x19`
+`0..128`  | UTF-8 C string
