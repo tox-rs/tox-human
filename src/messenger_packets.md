@@ -324,5 +324,5 @@ Serialized form:
 
 Length    | Content
 --------- | ------
-`1`       | `0x19`
+`1`       | `0x30`
 `0..128`  | UTF-8 C string
