@@ -15,10 +15,10 @@ Length    | Content
 `1`       | `file_id`
 `4`       | `file_type`(0 = data, 1 = avatar image data)
 `8`       | `file_size`
-`32`      | `file_unique_id`(a random symmetric tox key)
+`32`      | `file_unique_id`(a random bytes)
 `0.255`   | `file_name` as UTF-8 C string
 
-`file_type` and `file_unique_id` are sent in big endian format.
+`file_type` and `file_size` are sent in big endian format.
 
 ## FILE_DATA
 
