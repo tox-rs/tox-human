@@ -75,7 +75,7 @@
 </tr>
 <tr class="odd">
 <td><code>32</code></td>
-<td><code>file_unique_id</code>(a random symmetric tox key)</td>
+<td><code>file_unique_id</code>(a random bytes)</td>
 </tr>
 <tr class="even">
 <td><code>0.255</code></td>
@@ -83,7 +83,7 @@
 </tr>
 </tbody>
 </table>
-<p><code>file_type</code> and <code>file_unique_id</code> are sent in big endian format.</p>
+<p><code>file_type</code> and <code>file_size</code> are sent in big endian format.</p>
 <h2 id="file_data">FILE_DATA</h2>
 <p>FileData packet is used to transfer sender's data file to a friend. It holds <code>file_id</code> which is one byte long, means that a tox client can send maximum 256 files concurrently. Also it means that two friends can send 512 files to each other concurrently.</p>
 <p>Serialized form:</p>
@@ -518,7 +518,7 @@
 <tbody>
 <tr class="odd">
 <td><code>1</code></td>
-<td><code>0x19</code></td>
+<td><code>0x30</code></td>
 </tr>
 <tr class="even">
 <td><code>0..128</code></td>
