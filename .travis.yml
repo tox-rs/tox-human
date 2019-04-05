@@ -1,0 +1,20 @@
+language: rust
+sudo: false
+
+os: linux
+rust: stable
+
+before_install:
+  - cargo install mdbook --features search
+
+script:
+  - mdbook build
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  keep-history: false
+  local_dir: book/
+  github_token: $GITHUB_API_KEY
+  on:
+    branch: master

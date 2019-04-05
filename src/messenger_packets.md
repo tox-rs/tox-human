@@ -1,5 +1,3 @@
-Title: Packets of messenger
-
 This is a description of packets of messenger layer of Tox.
 
 ## FILE_SENDREQUEST

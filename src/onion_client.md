@@ -1,12 +1,10 @@
-Title: Onion client (UDP)
-
 This is a description of onion layer in Tox.
 
 ## Paths
 
 Onion routing can be described using this chart:
 
-<object data="static/path.svg" type="image/svg+xml"></object>
+![](./static/path.svg)
 
 To send a message via an onion path, first we construct the path by choosing three random nodes. Then, we put the message in several layers:
 
@@ -98,7 +96,7 @@ A node is good to ping if this is not the last pinged node unless the node was p
 
 A sequence chart for the beginning of self announce process (messages are sent via onion):
 
-<object data="static/announce_start.svg" type="image/svg+xml"></object>
+![](static/announce_start.svg)
 
 ## Friend search and DHTPK announce
 
@@ -110,7 +108,7 @@ The overall process has two steps:
 
 This is the chart of the second step:
 
-<object data="static/dhtpk.svg" type="image/svg+xml"></object>
+![](static/dhtpk.svg)
 
 Specifically:
 
