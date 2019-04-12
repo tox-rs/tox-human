@@ -42,45 +42,29 @@ Length    | Content
 
 When the user of tox client want to invite a friend to a conference, it uses `Invite packet`.
 The receiver who is a friend of us responds with `Response pcket`.
+If the receiver of `Invite packet` do not want to join the conference, just no reply will be enough.
+The sender of `Invite packet` doesn't receive `Response packet` from the friend, then inviting will be expired.
 
 The procedure of invite is:
 
 - find a group using group_number.
-- if the group doesn't exist
-    - return error.
-- else if the group status is not `connected`
-    - return error.
-- else
-    - assemble and send `Invite packet` using messenger and net crypto.
+- assemble and send `Invite packet` using messenger and net crypto.
     
-When a peer receives `Invite packet` then:
+When a peer receives `Invite packet` and want to join the conference then:
 
-- check if the packet length is correct, if it is not correct
-    - return error.
-- else
-    - get group number using received packet.
-    - join the group
-        - send `Response packet` to the peer.
-        - add friend connection to the group.
-        - send peer query packet.
+- get group number using received packet.
+- join the group
+    - send `Response packet` to the peer.
+    - add friend connection to the group.
+    - send peer query packet.
 
 When a peer receives `Response packet` then:
 
-- check if the packet size is correct, if it is not correct
-    - return error.
-- else
-    - find group using received packet.
-    - if can't find group
-        - return error.
-    - else if group type is not equal to group of us
-        - return error.
-    - else if the group id is not correct
-        - return error.
-    - else
-        - get random peer number which is not redundant.
-        - add the peer to group chat.
-        - add the friend connection to group chat.
-        - send new peer message to all of the group members.
+- find group using received packet.
+- get random peer number which is not redundant, this peer number will identify the sender of this packet.
+- add the peer to group chat.
+- add the friend connection to group chat.
+- send new peer message to all of the group members.
         
 ## Peer online packet
 
@@ -99,15 +83,15 @@ Length    | Content
 When a peer receives this packet then:
 
 - get group number of us using received packet's `unique id`.
-- get the group number of the peer us which is in the packet's `group number(local)`.
+- get the group number of the sender which is in the packet's `group number(local)`.
 - if the peer is already online then
     - return.
 - else
-    - if the number of close connected peers are zero or the peer is the one we are introducing to conference
+    - if the number of close connected peers are zero or the sender of this packet is the one we are introducing to conference
         - send `peer query packet`.
     - send `peer online packet` using net crypto.
-    - set the status of peer to online.
-    - if the peer is the one who we are introducing
+    - set the status of sender to online.
+    - if the sender is the one who we are introducing
         - send new peer message to all of the group members.
     - send ping.
 
@@ -131,7 +115,7 @@ When a peer receives this packet then:
 ## Peer query packet
 
 Sent to peer to query the peer list in a group chat. A peer receives this packet send response packet with `response packet`.
-If there are many peers in a group chat, then response packet may larger than the maximum packet size of friend connection packet(1373 bytes),
+If there are many peers in a group chat, then response packet may be larger than the maximum packet size of friend connection packet(1373 bytes),
 then multiple response packets will be sent.
 
 #### Request
@@ -346,6 +330,7 @@ When a peer receives this packet then:
 
 
 # DHT based group chat(version 2)
+![Group chat version 2](https://github.com/iphydf/c-toxcore/blob/new-group-chats/docs/DHT-Group-Chats.md)
 
 New version of group chat is based on DHT.
 It introduces many new features which are not provided by current version.
@@ -443,6 +428,14 @@ Serialized form:
 Length    | Content
 --------- | ------
 `1`       | `status`
+
+`status` is
+```
+    GS_NONE         = 0x00,
+    GS_AWAY         = 0x01,
+    GS_BUSY         = 0x02,
+    GS_INVALID      = 0x03,
+```
 
 When a peer receives this packet then:
 
