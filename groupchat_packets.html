@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Packets of group chat and group chat v2.</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: ["input/TeX", "output/HTML-CSS"],
+      MathML: {
+        extensions: ["content-mathml.js"]
+      },
+      "HTML-CSS": { webFont: "Neo-Euler" }
+    });
+  </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Packets of group chat and group chat v2.</h1>
+</header>
+<nav id="TOC">
+<ul>
+<li><a href="#current-version">Current version</a><ul>
+<li><a href="#invite_groupchat">INVITE_GROUPCHAT</a></li>
+<li><a href="#peer-online-packet">Peer online packet</a></li>
+<li><a href="#peer-leave-packet">Peer leave packet</a></li>
+<li><a href="#peer-query-packet">Peer query packet</a></li>
+<li><a href="#title-packet">Title packet</a></li>
+<li><a href="#message-packet">Message packet</a></li>
+</ul></li>
+<li><a href="#dht-based-group-chatversion-2">DHT based group chat(version 2)</a><ul>
+<li><a href="#lossless-packet-0x5b">Lossless packet (0x5b)</a></li>
+<li><a href="#lossy-packet-0x5c">Lossy packet (0x5c)</a></li>
+<li><a href="#handshake-packet-0x5a">Handshake packet (0x5a)</a></li>
+</ul></li>
+</ul>
+</nav>
+<p>This is a description of packets of group chat and group chat version 2 of Tox.</p>
+<h1 id="current-version">Current version</h1>
+<h2 id="invite_groupchat">INVITE_GROUPCHAT</h2>
+<p>Group chat can up to 4 members connected us. Each member of group chat has unique random 32 bytes id. Each group chat has its group number of 2 bytes. It also has a one byte type identifier, the current supported types are:</p>
+<pre><code>0: text,  1: audio</code></pre>
+<p>Invite group chat packets consist of invite packet and response packet.</p>
+<h4 id="invite-packet">Invite packet</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x60</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>0x00</code></td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>group number</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>group type</code>(0: text, 1: audio)</td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>unique id</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="response-packet">Response packet</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x60</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>0x01</code></td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>group number(local)</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number to join</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>group type</code>(0: text, 1: audio)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>unique id</code></td>
+</tr>
+</tbody>
+</table>
+<p>When the user of tox client want to invite a friend to a conference, it uses <code>Invite packet</code>. The receiver who is a friend of us responds with <code>Response pcket</code>.</p>
+<p>The procedure of invite is:</p>
+<ul>
+<li>find a group using group_number.</li>
+<li>if the group doesn't exist
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else if the group status is not <code>connected</code>
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else
+<ul>
+<li>assemble and send <code>Invite packet</code> using messenger and net crypto.</li>
+</ul></li>
+</ul>
+<p>When a peer receives <code>Invite packet</code> then:</p>
+<ul>
+<li>check if the packet length is correct, if it is not correct
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else
+<ul>
+<li>get group number using received packet.</li>
+<li>join the group
+<ul>
+<li>send <code>Response packet</code> to the peer.</li>
+<li>add friend connection to the group.</li>
+<li>send peer query packet.</li>
+</ul></li>
+</ul></li>
+</ul>
+<p>When a peer receives <code>Response packet</code> then:</p>
+<ul>
+<li>check if the packet size is correct, if it is not correct
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else
+<ul>
+<li>find group using received packet.</li>
+<li>if can't find group
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else if group type is not equal to group of us
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else if the group id is not correct
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>else
+<ul>
+<li>get random peer number which is not redundant.</li>
+<li>add the peer to group chat.</li>
+<li>add the friend connection to group chat.</li>
+<li>send new peer message to all of the group members.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="peer-online-packet">Peer online packet</h2>
+<p>As soon as the connection to the other peer is opened, a <code>peer online packet</code> is sent to the peer. The purpose of this packet is to tell the peer that we want to establish the group chat connection.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x61</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number(local)</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>group type</code>(0: text, 1: audio)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>unique id</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>get group number of us using received packet's <code>unique id</code>.</li>
+<li>get the group number of the peer us which is in the packet's <code>group number(local)</code>.</li>
+<li>if the peer is already online then
+<ul>
+<li>return.</li>
+</ul></li>
+<li>else
+<ul>
+<li>if the number of close connected peers are zero or the peer is the one we are introducing to conference
+<ul>
+<li>send <code>peer query packet</code>.</li>
+</ul></li>
+<li>send <code>peer online packet</code> using net crypto.</li>
+<li>set the status of peer to online.</li>
+<li>if the peer is the one who we are introducing
+<ul>
+<li>send new peer message to all of the group members.</li>
+</ul></li>
+<li>send ping.</li>
+</ul></li>
+</ul>
+<h2 id="peer-leave-packet">Peer leave packet</h2>
+<p>This packet is sent to the peer right before killing a group connection.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x62</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number(local)</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x01</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>kill the friend connection.</li>
+<li>set close list to nothing connected.</li>
+</ul>
+<h2 id="peer-query-packet">Peer query packet</h2>
+<p>Sent to peer to query the peer list in a group chat. A peer receives this packet send response packet with <code>response packet</code>. If there are many peers in a group chat, then response packet may larger than the maximum packet size of friend connection packet(1373 bytes), then multiple response packets will be sent.</p>
+<h4 id="request">Request</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x62</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x08</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>assembles <code>response</code> packet and if the size of response is larger than maximum size then sends multiple <code>response</code> packets.</li>
+<li>assembles <code>title</code> request packet and sends packet to peer.</li>
+</ul>
+<h4 id="response">Response</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x62</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x09</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>peer info list</code></td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>peer info list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>peer number</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>Real PK</td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td>Temp PK</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>length</code> of nickname</td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td>Nickname(UTF-8 String)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>while all entry of <code>peer info list</code> are processed
+<ul>
+<li>if group status is <code>valid</code> and real PK is same as the net crypto's real PK
+<ul>
+<li>set status to <code>connected</code>.</li>
+<li>send <code>invite</code> request packet.</li>
+</ul></li>
+<li>add peer to group using temp PK.</li>
+<li>update nickname of the peer.</li>
+</ul></li>
+<li>loop</li>
+</ul>
+<h2 id="title-packet">Title packet</h2>
+<p>This packet is sent right after peer query packet is sent.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x62</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x0a</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td>Title(UTF-8 C String)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>check if the title is same as existing title, if same then
+<ul>
+<li>return.</li>
+</ul></li>
+<li>else
+<ul>
+<li>update title of the group chat.</li>
+</ul></li>
+</ul>
+<h2 id="message-packet">Message packet</h2>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x63</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>group number</code></td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>peer number</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>message number</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>message kind</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>message kind</code> is</p>
+<pre><code>    PING            = 0x00,
+    NEW_PEER        = 0x10,
+    KILL_PEER       = 0x11,
+    FREEZE_PEER     = 0x12,
+    NAME            = 0x30,
+    TITLE           = 0x31,
+    CHAT MESSAGE    = 0x40,
+    ACTION          = 0x41,</code></pre>
+<p><code>Data</code> varies depending on <code>message kind</code>.</p>
+<h4 id="ping-0x00">Ping (0x00)</h4>
+<p>Sent every 60 seconds by every peer. Contains no body.</p>
+<h4 id="new-peer-0x10">New peer (0x10)</h4>
+<p>Tell everyone about a new peer in the chat. The peer who invited joining peer sends this packet to warn everyone that there is a new peer.</p>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>peer number</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>Long term PK</td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td>DHT PK</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>add peer to peer list.</li>
+</ul>
+<h4 id="kill-peer-0x11">Kill peer (0x11)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>peer number</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer quit a group chat, right before quit, it send this packet.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>delete peer from peer list.</li>
+</ul>
+<h4 id="freeze-peer-0x12">Freeze peer (0x12)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>peer number</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer quit running, it need to freeze group chat rather than remove it.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>send rejoin packet to the group members.</li>
+<li>save peer info list.</li>
+<li>delete peer.</li>
+</ul>
+<h4 id="name-packet-0x30">Name packet (0x30)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>Name (UTF-8 C string)</td>
+</tr>
+</tbody>
+</table>
+<p>Sent by a peer who wants to change its name or by a joining peer to notify its name to members of group chat.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if the name equal to existing name then
+<ul>
+<li>return.</li>
+</ul></li>
+<li>else
+<ul>
+<li>update name of the peer in the group chat.</li>
+</ul></li>
+</ul>
+<h4 id="title-packet-0x31">Title packet (0x31)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>Title (UTF-8 C string)</td>
+</tr>
+</tbody>
+</table>
+<p>Sent by anyone who is member of group.</p>
+<p>This packet is used to change the title of group chat.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if the title equal to existing one then
+<ul>
+<li>return.</li>
+</ul></li>
+<li>else
+<ul>
+<li>update title of group chat.</li>
+</ul></li>
+</ul>
+<h4 id="chat-message-packet-0x40">Chat message packet (0x40)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>Message(UTF-8 C string)</td>
+</tr>
+</tbody>
+</table>
+<p>Sent to send chat message to all member of group chat.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>show the message in the chatting window by calling callback of client.</li>
+</ul>
+<h4 id="action-packet-0x41">Action packet (0x41)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>Message(UTF-8 C string)</td>
+</tr>
+</tbody>
+</table>
+<p>Sent to send action to all member of group chat.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>show the message in the chatting window by calling callback of client.</li>
+</ul>
+<h1 id="dht-based-group-chatversion-2">DHT based group chat(version 2)</h1>
+<p>New version of group chat is based on DHT. It introduces many new features which are not provided by current version. It has 4 types of member which are founder, moderator, user, observer and provides public group, private group.</p>
+<h2 id="lossless-packet-0x5b">Lossless packet (0x5b)</h2>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x5b</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>hash id</code></td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>PK of sender</code></td>
+</tr>
+<tr class="even">
+<td><code>24</code></td>
+<td><code>nonce</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>packet kind</code></td>
+</tr>
+<tr class="even">
+<td><code>8</code></td>
+<td><code>message id</code></td>
+</tr>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>sender pk hash</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>Data</code> depends on <code>packet kind</code>.</p>
+<p><code>packet kind</code> is</p>
+<pre><code>    GP_CUSTOM_PACKET            = 0xf1,
+    GP_PEER_ANNOUNCE            = 0xf2,
+    GP_BROADCAST                = 0xf3,
+    GP_PEER_INFO_REQUEST        = 0xf4,
+    GP_PEER_INFO_RESPONSE       = 0xf5,
+    GP_INVITE_REQUEST           = 0xf6,
+    GP_INVITE_RESPONSE          = 0xf7,
+    GP_SYNC_REQUEST             = 0xf8,
+    GP_SYNC_RESPONSE            = 0xf9,
+    GP_TOPIC                    = 0xfa,
+    GP_SHARED_STATE             = 0xfb,
+    GP_MOD_LIST                 = 0xfc,
+    GP_SANCTIONS_LIST           = 0xfd,
+    GP_FRIEND_INVITE            = 0xfe,
+    GP_HS_RESPONSE_ACK          = 0xff</code></pre>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>get the peer number using serder's PK.</li>
+<li>get the group connection using peer number.</li>
+<li>unpack packet using group connection's shared key.</li>
+<li>if <code>packet kind</code> is not GP_HS_RESPONSE_ACK and is not GP_INVITE_REQUEST and is not in state of handshaked then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>get sender pk hash from <code>data</code>.</li>
+<li>if sender pk hash is not same as group connection's one then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>if <code>packet kind</code> is invite related packet type and <code>message id</code> of this packet is 3 and group connection's message id is 1 then
+<ul>
+<li>return error because probably we missed handshake packet.</li>
+</ul></li>
+<li>if message id is lower than current one then
+<ul>
+<li>it is duplicated message, so we responds with ack.</li>
+</ul></li>
+<li>if message id is grater than current one + 1 then
+<ul>
+<li>we lost one or more messages, so we put this message to array to save.</li>
+<li>responds with ack.</li>
+</ul></li>
+<li>if message id equals current one + 1 then
+<ul>
+<li>we received correct message id, so process it immediately/</li>
+<li>processing packet deponds on <code>packet kind</code>, it is listed below.</li>
+</ul></li>
+<li>get peer number and group connection again.</li>
+<li>if the peer still exists and we received correct message id then
+<ul>
+<li>responds with ack.</li>
+</ul></li>
+</ul>
+<h4 id="broadcast-packet-0xf3">Broadcast packet (0xf3)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code></td>
+</tr>
+<tr class="even">
+<td><code>8</code></td>
+<td><code>timestamp</code></td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>Data</code> depends on <code>type</code>.</p>
+<p><code>type</code> is</p>
+<pre><code>    GM_STATUS               = 0x00,
+    GM_NICK                 = 0x01,
+    GM_PLAIN_MESSAGE        = 0x02,
+    GM_ACTION_MESSAGE       = 0x03,
+    GM_PRIVATE_MESSAGE      = 0x04,
+    GM_PEER_EXIT            = 0x05,
+    GM_REMOVE_PEER          = 0x06,
+    GM_REMOVE_BAN           = 0x07,
+    GM_SET_MOD              = 0x08,
+    GM_SET_OBSERVER         = 0x08,</code></pre>
+<h5 id="status">Status</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>status</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>set status of a peer in group
+<ul>
+<li>call callback of client to update status of a peer.</li>
+<li>update variable of status of a peer in group.</li>
+</ul></li>
+</ul>
+<h5 id="nickname">Nickname</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>nickname(UTF-8 C String)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>set nickname of a peer in group
+<ul>
+<li>call callback of client to update nickname of a peer.</li>
+<li>update variable of nickname of a peer in group.</li>
+</ul></li>
+</ul>
+<h5 id="plainaction-message">Plain/Action message</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>message(UTF-8 C String)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>show plain/action message in group text window
+<ul>
+<li>call callback of client to show message.</li>
+</ul></li>
+</ul>
+<h5 id="private-message">Private message</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td>message(UTF-8 C String)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>show private message in group text window as private mode
+<ul>
+<li>call callback of client to show message as private mode.</li>
+</ul></li>
+</ul>
+<h5 id="peer-exit">Peer exit</h5>
+<p>Body of packet is not clearly defined now.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>delete peer number from group
+<ul>
+<li>if connection status is (<code>disconnected</code> or <code>connecting</code> or <code>manually disconnected</code>) and private group then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>if connection is handshaked but not confirmed then
+<ul>
+<li>copy PK of peer to confirmed peers list.</li>
+</ul></li>
+<li>if connection is confirmed then
+<ul>
+<li>call callback to notify deleting peer to client.</li>
+</ul></li>
+<li>delete tcp connection.</li>
+<li>clean up peer info in group.</li>
+<li>decrease number of peers.</li>
+</ul></li>
+</ul>
+<h5 id="remove-peer">Remove peer</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>event</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of target</td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td><code>sanction list</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>event</code> is</p>
+<pre><code>    MV_KICK         = 0x00,
+    MV_BAN,         = 0x01,
+    MV_OBSERVER     = 0x02,
+    MV_USER         = 0x03,
+    MV_MODERATOR    = 0x04,
+    MV_INVALID      = 0x05,</code></pre>
+<p>An entry of <code>sanction list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code>(see below)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of signature</td>
+</tr>
+<tr class="odd">
+<td><code>8</code></td>
+<td>timestamp</td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>Data</code> depends on <code>type</code>.</p>
+<p><code>type</code> is</p>
+<pre><code>    SA_BAN_IP_PORT      = 0x00,
+    SA_BAN_PUBLIC_KEY   = 0x01,
+    SA_BAN_NICK         = 0x02,
+    SA_OBSERVER         = 0x03,
+    SA_INVALID          = 0x04,</code></pre>
+<ul>
+<li>SA_BAN_IP_PORT</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>id</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="odd">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address</td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td>port</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>SA_BAN_NICK</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>id</code></td>
+</tr>
+<tr class="even">
+<td><code>128</code></td>
+<td>nickname</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>SA_BAN_PUBLIC_KEY</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>id</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of target</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>SA_OBSERVER</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td>PK of target</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if <code>event</code> is not MV_KICK and is not MV_BAN then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>get target peer number using PK of target PK.</li>
+<li>if target peer number is 0 then
+<ul>
+<li>call callback of client which update UI.</li>
+<li>delete all group member except founder.</li>
+</ul></li>
+<li>if <code>event</code> is MV_BAN then
+<ul>
+<li>parse <code>sanction list</code>.</li>
+<li>add sanction list.</li>
+</ul></li>
+<li>call callback of client to update UI.</li>
+<li>delete peer from group.</li>
+</ul>
+<h5 id="remove-ban">Remove ban</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>ban_id</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>sanction list</code>(see above)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>parse sanction list.</li>
+<li>remove sanctions which is listed in sanction list.</li>
+</ul>
+<h5 id="setunset-moderator">Set/unset moderator</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>kind</code>(0 = set to user, otherwise = set to moderator)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK(<code>kind</code> = 0) or Moderator hash(<code>kind</code> is not 0)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if <code>kind</code> is not <code>0</code> then
+<ul>
+<li>get peer number using moderator hash.</li>
+<li>add peer to moderator list.</li>
+<li>set peer's role to moderator.</li>
+</ul></li>
+<li>else
+<ul>
+<li>get peer number using PK.</li>
+<li>remove peer from moderator list.</li>
+<li>set peer's role to user.</li>
+</ul></li>
+<li>call callback of client to update UI.</li>
+</ul>
+<h5 id="set-observer">Set observer</h5>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>kind</code>(0 = remove sanctions, otherwise = set sanctions)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK</td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td><code>sanction list</code>(see above)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if <code>kind</code> is not 0 then
+<ul>
+<li>add sanction list to group. -else</li>
+<li>remove sanction list from group.</li>
+</ul></li>
+<li>call callback of client to update UI.</li>
+</ul>
+<h4 id="peer-announce-0xf2">Peer announce (0xf2)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td>PK of peer</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>flag</code>(of ip port is setted)</td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>count</code>(of tcp relays)</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="odd">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address(comes only when <code>flag</code> is setted)</td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td>port(comes only when <code>flag</code> is setted)</td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td>tcp relay list</td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>tcp relay list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="even">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address</td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td>port</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of peer</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if the peer is in sanction list then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>add peer to group with PK and Ip, Port.</li>
+<li>add and save tcp relays to group data structures.</li>
+</ul>
+<h4 id="peer-info-request-0xf4">Peer info request (0xf4)</h4>
+<p>This packet has no data body.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>send self info to peer.</li>
+</ul>
+<h4 id="peer-info-response-0xf5">Peer info response (0xf5)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>password</code>(comes only when password is setted)</td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>length</code> of nickname</td>
+</tr>
+<tr class="odd">
+<td><code>128</code></td>
+<td><code>nickname</code>(UTF-8 string)</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>status</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>role</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>updatee info of the peer.</li>
+<li>validate role of peer, if it is error then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>call callback of client to update UI.</li>
+</ul>
+<h4 id="sync-request-0xf8">Sync Request (0xf8)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>password</code>(comes only when password is setted)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>send shared state.</li>
+<li>send peer moderator list.</li>
+<li>send peer topic.</li>
+<li>send response packet.</li>
+</ul>
+<h4 id="sync-response-0xf9">Sync response (0xf9)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>number</code>(of peers)</td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>announce list</code></td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>announce list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td>PK of peer</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>flag</code>(of ip port is setted)</td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>count</code>(of tcp relays)</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="odd">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address(comes only when <code>flag</code> is setted)</td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td>port(comes only when <code>flag</code> is setted)</td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td><code>tcp relay list</code></td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>tcp relay list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="even">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address</td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td>port</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of peer</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>parse announce list.</li>
+<li>add peers to group.</li>
+<li>add and save tcp relays to group.</li>
+<li>if <code>flag</code> of ip port is setted and tcp relays count &gt; 0 then
+<ul>
+<li>send handshake packet to peer.</li>
+</ul></li>
+<li>set myself to <code>connected</code> status.</li>
+<li>call callback of client to update UI.</li>
+</ul>
+<h4 id="invite-request-0xf6">Invite request (0xf6)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>length</code>(of nickname)</td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>nickname</code> of length <code>length</code>(UTF-8 string)</td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>password</code>(comes only when password is setted)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>get peer number using nickname, if can't get
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>if the peer is banned then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>if <code>password</code> is setted in group then
+<ul>
+<li>check the password is same, if not
+<ul>
+<li>return error.</li>
+</ul></li>
+</ul></li>
+<li>send response packet.</li>
+</ul>
+<h4 id="invite-response-0xf7">Invite response (0xf7)</h4>
+<p>No message body.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>send sync request packet.</li>
+</ul>
+<h4 id="topic-0xfa">Topic (0xfa)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>64</code></td>
+<td><code>signature</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>length</code>(of topic)</td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td><code>topic</code> of length <code>length</code>(UTF-8 string)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>PK of signature</code></td>
+</tr>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>version</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>veryfy signature, if error then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>if the <code>topic</code> is same with current one then
+<ul>
+<li>return.</li>
+</ul></li>
+<li>else
+<ul>
+<li>call callback of client to update UI.</li>
+</ul></li>
+</ul>
+<h4 id="shared-state-0xfb">Shared state (0xfb)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>64</code></td>
+<td><code>signature</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>PK of founder</code></td>
+</tr>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>max peers</code></td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td><code>length</code>(of group name)</td>
+</tr>
+<tr class="odd">
+<td><code>48</code></td>
+<td><code>group name</code>(UTF-8 String)</td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>privacy state</code></td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>password length</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>password</code></td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>moderation hash</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>version</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>validate shared state.</li>
+<li>update shared state.</li>
+</ul>
+<h4 id="mod-list-0xfc">Mod list (0xfc)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>2</code></td>
+<td><code>number</code>(of moderators)</td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>mod list</code></td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>mod list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>PK of signature</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>parse packet.</li>
+<li>update mod list.</li>
+<li>check if mod hash is same with packet's one
+<ul>
+<li>if not, return error.</li>
+</ul></li>
+<li>check role of us, if it fails then
+<ul>
+<li>set us to user.</li>
+</ul></li>
+</ul>
+<h4 id="sanctions-list-0xfd">Sanctions list (0xfd)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>number</code>(of sanctions)</td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>sanction list</code></td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>sanction list</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code>(see below)</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of signature</td>
+</tr>
+<tr class="odd">
+<td><code>8</code></td>
+<td>timestamp</td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>Data</code> depends on <code>type</code>.</p>
+<p><code>type</code> is</p>
+<pre><code>    SA_BAN_IP_PORT      = 0x00,
+    SA_BAN_PUBLIC_KEY   = 0x01,
+    SA_BAN_NICK         = 0x02,
+    SA_OBSERVER         = 0x03,
+    SA_INVALID          = 0x04,</code></pre>
+<ul>
+<li>SA_BAN_IP_PORT</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>id</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="odd">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address</td>
+</tr>
+<tr class="even">
+<td><code>2</code></td>
+<td>port</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>SA_BAN_NICK</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>id</code></td>
+</tr>
+<tr class="even">
+<td><code>128</code></td>
+<td>nickname</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>SA_BAN_PUBLIC_KEY</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>id</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of target</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>SA_OBSERVER</li>
+</ul>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td>PK of target</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>validate sanctions, if error then
+<ul>
+<li>return error.</li>
+</ul></li>
+<li>adopt sanctions to peers.</li>
+</ul>
+<h4 id="handshake-response-ack-0xff">Handshake response ack (0xff)</h4>
+<p>No message body.</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>send invite request packet to peer.</li>
+</ul>
+<h4 id="custom-packet-0xf1">Custom packet (0xf1)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td><code>user data</code>(defined by user)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>call callback of client to pass <code>user data</code>.</li>
+</ul>
+<h2 id="lossy-packet-0x5c">Lossy packet (0x5c)</h2>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x5c</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>hash id</code></td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>PK of sender</code></td>
+</tr>
+<tr class="even">
+<td><code>24</code></td>
+<td><code>nonce</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>packet kind</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>sender pk hash</code></td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>Data</code> depends on <code>packet kind</code></p>
+<p><code>packet kind</code> is</p>
+<pre><code>    GP_PING                     = 0x01,
+    GP_MESSAGE_ACK              = 0x02,
+    GP_INVITE_RESPONSE_REJECT   = 0x03,
+    GP_TCP_RELAYS               = 0x04,</code></pre>
+<h4 id="message-act-0x02">Message act (0x02)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>8</code></td>
+<td><code>read id</code></td>
+</tr>
+<tr class="even">
+<td><code>8</code></td>
+<td><code>request id</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>re-send requested packet.</li>
+</ul>
+<h4 id="ping-0x01">Ping (0x01)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>num peers</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>state version</code></td>
+</tr>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>screds version</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>topic version</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>send sync request packet.</li>
+</ul>
+<h4 id="invite-response-reject-0x03">Invite response reject (0x03)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>call callback of client to update UI.</li>
+</ul>
+<h4 id="tcp-relays-0x04">Tcp relays (0x04)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="even">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address</td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td>port</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of peer</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>add tcp relays to group connection.</li>
+</ul>
+<h4 id="custom-packet-0xf1-1">Custom packet (0xf1)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable</td>
+<td><code>user data</code>(defined by user)</td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>call callback of client to pass <code>user data</code>.</li>
+</ul>
+<h2 id="handshake-packet-0x5a">Handshake packet (0x5a)</h2>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>0x5a</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>hash id</code></td>
+</tr>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>PK of sender</code></td>
+</tr>
+<tr class="even">
+<td><code>24</code></td>
+<td><code>nonce</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>packet kind</code></td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>sender pk hash</code></td>
+</tr>
+<tr class="odd">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p><code>Data</code> depends on <code>packet kind</code></p>
+<p><code>packet kind</code> is</p>
+<pre><code>    GH_REQUEST      = 0x00,
+    GH_RESPONSE     = 0x01,</code></pre>
+<h4 id="handshake-request-0x00">Handshake Request (0x00)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>Enc PK</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>Sig PK</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>request type</code></td>
+</tr>
+<tr class="even">
+<td><code>1</code></td>
+<td><code>join type</code></td>
+</tr>
+<tr class="odd">
+<td><code>4</code></td>
+<td><code>state version</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td><code>nodes</code></td>
+</tr>
+</tbody>
+</table>
+<p>An entry of <code>nodes</code> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>type</code>(of ip)</td>
+</tr>
+<tr class="even">
+<td><code>4</code> or <code>16</code></td>
+<td>IPv4 or IPv6 address</td>
+</tr>
+<tr class="odd">
+<td><code>2</code></td>
+<td>port</td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td>PK of peer</td>
+</tr>
+</tbody>
+</table>
+<h4 id="handshake-response-0x01">Handshake response (0x01)</h4>
+<p>Serialized form:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>32</code></td>
+<td><code>Enc PK</code></td>
+</tr>
+<tr class="even">
+<td><code>32</code></td>
+<td><code>Sig PK</code></td>
+</tr>
+<tr class="odd">
+<td><code>1</code></td>
+<td><code>request type</code></td>
+</tr>
+<tr class="even">
+<td>variable</td>
+<td>Data</td>
+</tr>
+</tbody>
+</table>
+<p>Data depends on <code>request type</code></p>
+<p><code>request type</code> is</p>
+<pre><code>    HS_INVITE_REQUEST       = 0x00,
+    HS_PEER_INFO_EXCHANGE   = 0x01,</code></pre>
+<h5 id="handshake-invite-request-0x00">Handshake invite request (0x00)</h5>
+<table>
+<thead>
+<tr class="header">
+<th>Length</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1</code></td>
+<td>padding</td>
+</tr>
+<tr class="even">
+<td><code>4</code></td>
+<td><code>state version</code></td>
+</tr>
+</tbody>
+</table>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>if <code>state version</code> is older than current version or (<code>state verseion</code> is same and PK differs) then
+<ul>
+<li>return.</li>
+</ul></li>
+<li>send group chat invite request packet.</li>
+</ul>
+<h5 id="peer-info-exchange-0x01">Peer info exchange (0x01)</h5>
+<p>No message body</p>
+<p>When a peer receives this packet then:</p>
+<ul>
+<li>send peer info response packet.</li>
+<li>send peer info request packet.</li>
+</ul>
+</body>
+</html>

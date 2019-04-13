@@ -7,3 +7,4 @@ rule pd
 build index.html: pd src/index.md | magic.head
 build onion_client.html: pd src/onion_client.md | magic.head
 build messenger_packets.html: pd src/messenger_packets.md | magic.head
+build groupchat_packets.html: pd src/groupchat_packets.md | magic.head
