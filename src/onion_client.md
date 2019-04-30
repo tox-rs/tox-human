@@ -68,7 +68,7 @@ Getting a random path:
 	4. If not:
 		1. Create a new onion path
 		2. Set times for the path
-		3. Set `path_num = r(random_u32(), NUMBER_ONION_PATHS) + path_index`, where $r(a, n) = a - (a \bmod n)$ – a “modulo rounding” function
+		3. Set `path_num = r(random_u32(), NUMBER_ONION_PATHS) + path_index`, where \\(r(a, n) = a - (a \bmod n)\\) – a “modulo rounding” function
 3. Otherwise, just use the existing path
 4. If the path is not out of usage credit, update `last_path_used`
 5. Increment the usage debt of the path
