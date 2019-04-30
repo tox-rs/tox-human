@@ -2,8 +2,14 @@
 
 This repository contains the documentation of Tox for the Tox-rs project.
 
-## Building
+Install mdbook like this
 
-To build docs, first install [Pandoc](https://pandoc.org/) and [Ninja](https://ninja-build.org/). After that, just run `ninja` in the root directory.
+`cargo install mdbook`
+
+To build docs do this command
+
+`mdbook build`
+
+See this for detailed `mdbook` [mdbook](https://github.com/rust-lang-nursery/mdBook).
 
 Already built docs can be read [here](https://tox-rs.github.io/tox-human/).

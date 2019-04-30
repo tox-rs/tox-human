@@ -1,5 +1,3 @@
-Title: Packets of group chat and group chat v2.
-
 This is a description of packets of group chat and group chat version 2 of Tox.
 
 # Current version
