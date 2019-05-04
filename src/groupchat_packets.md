@@ -1,17 +1,17 @@
-This is a description of packets of group chat and group chat version 2 of Tox.
+This is a description of packets of conference and conference version 2 of Tox.
 
 # Current version
 
-## INVITE_GROUPCHAT
+## INVITE_CONFERENCE
 
-Group chat can up to 4 members connected us. Each member of group chat has unique random 32 bytes id.
-Each group chat has its group number of 2 bytes.
+Conference can up to 4 members connected us. Each member of conference has unique random 32 bytes id.
+Each conference has its conference id of 2 bytes.
 It also has a one byte type identifier, the current supported types are:
 ```
 0: text,  1: audio
 ```
 
-Invite group chat packets consist of invite packet and response packet.
+Invite conference packets consist of invite packet and response packet.
 
 #### Invite packet
 
@@ -21,8 +21,8 @@ Length    | Content
 --------- | ------
 `1`       | `0x60`
 `1`       | `0x00`
-`2`       | `group number`
-`1`       | `group type`(0: text, 1: audio)
+`2`       | `conference id`
+`1`       | `conference type`(0: text, 1: audio)
 `32`      | `unique id`
 
 #### Response packet
@@ -33,9 +33,9 @@ Length    | Content
 --------- | ------
 `1`       | `0x60`
 `1`       | `0x01`
-`2`       | `group number(local)`
-`2`       | `group number to join`
-`1`       | `group type`(0: text, 1: audio)
+`2`       | `conference id(local)`
+`2`       | `conference id to join`
+`1`       | `conference type`(0: text, 1: audio)
 `32`      | `unique id`
 
 When the user of tox client want to invite a friend to a conference, it uses `Invite packet`.
@@ -45,43 +45,43 @@ The sender of `Invite packet` doesn't receive `Response packet` from the friend,
 
 The procedure of invite is:
 
-- find a group using group_number.
+- find a conference using conference_id.
 - assemble and send `Invite packet` using messenger and net crypto.
     
 When a peer receives `Invite packet` and want to join the conference then:
 
-- get group number using received packet.
-- join the group
+- get conference id using received packet.
+- join the conference
     - send `Response packet` to the peer.
-    - add friend connection to the group.
+    - add friend connection to the conference.
     - send peer query packet.
 
 When a peer receives `Response packet` then:
 
-- find group using received packet.
+- find conference using received packet.
 - get random peer number which is not redundant, this peer number will identify the sender of this packet.
-- add the peer to group chat.
-- add the friend connection to group chat.
-- send new peer message to all of the group members.
+- add the peer to conference.
+- add the friend connection to conference.
+- send new peer message to all of the conference members.
         
 ## Peer online packet
 
 As soon as the connection to the other peer is opened, a `peer online packet` is sent to the peer.
-The purpose of this packet is to tell the peer that we want to establish the group chat connection.
+The purpose of this packet is to tell the peer that we want to establish the conference connection.
 
 Serialized form:
 
 Length    | Content
 --------- | ------
 `1`       | `0x61`
-`2`       | `group number(local)`
-`1`       | `group type`(0: text, 1: audio)
+`2`       | `conference id(local)`
+`1`       | `conference type`(0: text, 1: audio)
 `32`      | `unique id`
 
 When a peer receives this packet then:
 
-- get group number of us using received packet's `unique id`.
-- get the group number of the sender which is in the packet's `group number(local)`.
+- get conference id of us using received packet's `unique id`.
+- get the conference id of the sender which is in the packet's `conference id(local)`.
 - if the peer is already online then
     - return.
 - else
@@ -90,19 +90,19 @@ When a peer receives this packet then:
     - send `peer online packet` using net crypto.
     - set the status of sender to online.
     - if the sender is the one who we are introducing
-        - send new peer message to all of the group members.
+        - send new peer message to all of the conference members.
     - send ping.
 
 ## Peer leave packet
 
-This packet is sent to the peer right before killing a group connection.
+This packet is sent to the peer right before killing a conference connection.
 
 Serialized form:
 
 Length    | Content
 --------- | ------
 `1`       | `0x62`
-`2`       | `group number(local)`
+`2`       | `conference id(local)`
 `1`       | `0x01`
 
 When a peer receives this packet then:
@@ -112,8 +112,8 @@ When a peer receives this packet then:
 
 ## Peer query packet
 
-Sent to peer to query the peer list in a group chat. A peer receives this packet send response packet with `response packet`.
-If there are many peers in a group chat, then response packet may be larger than the maximum packet size of friend connection packet(1373 bytes),
+Sent to peer to query the peer list in a conference. A peer receives this packet send response packet with `response packet`.
+If there are many peers in a conference, then response packet may be larger than the maximum packet size of friend connection packet(1373 bytes),
 then multiple response packets will be sent.
 
 #### Request
@@ -123,7 +123,7 @@ Serialized form:
 Length    | Content
 --------- | ------
 `1`       | `0x62`
-`2`       | `group number`
+`2`       | `conference id`
 `1`       | `0x08`
 
 When a peer receives this packet then:
@@ -139,7 +139,7 @@ Serialized form:
 Length    | Content
 --------- | ------
 `1`       | `0x62`
-`2`       | `group number`
+`2`       | `conference id`
 `1`       | `0x09`
 variable  | `peer info list`
 
@@ -156,10 +156,10 @@ variable  | Nickname(UTF-8 String)
 When a peer receives this packet then:
 
 - while all entry of `peer info list` are processed
-    - if group status is `valid` and real PK is same as the net crypto's real PK
+    - if conference status is `valid` and real PK is same as the net crypto's real PK
         - set status to `connected`.
         - send `invite` request packet.
-    - add peer to group using temp PK.
+    - add peer to conference using temp PK.
     - update nickname of the peer.
 - loop
 
@@ -172,7 +172,7 @@ Serialized form:
 Length    | Content
 --------- | ------
 `1`       | `0x62`
-`2`       | `group number`
+`2`       | `conference id`
 `1`       | `0x0a`
 variable  | Title(UTF-8 C String)
 
@@ -181,7 +181,7 @@ When a peer receives this packet then:
 - check if the title is same as existing title, if same then
     - return.
 - else
-    - update title of the group chat.
+    - update title of the conference.
     
 ## Message packet
 
@@ -190,7 +190,7 @@ Serialized form:
 Length    | Content
 --------- | ------
 `1`       | `0x63`
-`2`       | `group number`
+`2`       | `conference id`
 `2`       | `peer number`
 `4`       | `message number`
 `1`       | `message kind`
@@ -240,7 +240,7 @@ Length    | Content
 --------- | ------
 `2`       | `peer number`
 
-When a peer quit a group chat, right before quit, it send this packet.
+When a peer quit a conference, right before quit, it send this packet.
 
 When a peer receives this packet then:
 
@@ -254,11 +254,11 @@ Length    | Content
 --------- | ------
 `2`       | `peer number`
 
-When a peer quit running, it need to freeze group chat rather than remove it.
+When a peer quit running, it need to freeze conference rather than remove it.
 
 When a peer receives this packet then:
 
-- send rejoin packet to the group members.
+- send rejoin packet to the conference members.
 - save peer info list.
 - delete peer.
 
@@ -270,14 +270,14 @@ Length    | Content
 --------- | ------
 variable  | Name (UTF-8 C string)
 
-Sent by a peer who wants to change its name or by a joining peer to notify its name to members of group chat.
+Sent by a peer who wants to change its name or by a joining peer to notify its name to members of conference.
 
 When a peer receives this packet then:
 
 - if the name equal to existing name then
     - return.
 - else
-    - update name of the peer in the group chat.
+    - update name of the peer in the conference.
     
 #### Title packet (0x31)
  
@@ -287,16 +287,16 @@ Length    | Content
 --------- | ------
 variable  | Title (UTF-8 C string)
 
-Sent by anyone who is member of group.
+Sent by anyone who is member of conference.
 
-This packet is used to change the title of group chat.
+This packet is used to change the title of conference.
 
 When a peer receives this packet then:
 
 - if the title equal to existing one then
     - return.
 - else
-    - update title of group chat.
+    - update title of conference.
     
 #### Chat message packet (0x40)
 
@@ -306,7 +306,7 @@ Length    | Content
 --------- | ------
 variable  | Message(UTF-8 C string)
 
-Sent to send chat message to all member of group chat.
+Sent to send chat message to all member of conference.
 
 When a peer receives this packet then:
 
@@ -320,19 +320,19 @@ Length    | Content
 --------- | ------
 variable  | Message(UTF-8 C string)
 
-Sent to send action to all member of group chat.
+Sent to send action to all member of conference.
 
 When a peer receives this packet then:
 
 - show the message in the chatting window by calling callback of client.
 
 
-# DHT based group chat(version 2)
-![Group chat version 2](https://github.com/iphydf/c-toxcore/blob/new-group-chats/docs/DHT-Group-Chats.md)
+# DHT based conference(version 2)
+![Conference version 2](https://github.com/iphydf/c-toxcore/blob/new-group-chats/docs/DHT-Group-Chats.md)
 
-New version of group chat is based on DHT.
+New version of conference is based on DHT.
 It introduces many new features which are not provided by current version.
-It has 4 types of member which are founder, moderator, user, observer and provides public group, private group.
+It has 4 types of member which are founder, moderator, user, observer and provides public conference, private conference.
 
 ## Lossless packet (0x5b)
 
@@ -372,14 +372,14 @@ variable  | Data
 When a peer receives this packet then:
 
 - get the peer number using serder's PK.
-- get the group connection using peer number.
-- unpack packet using group connection's shared key.
+- get the conference connection using peer number.
+- unpack packet using conference connection's shared key.
 - if `packet kind` is not GP_HS_RESPONSE_ACK and is not GP_INVITE_REQUEST and is not in state of handshaked then
     - return error.
 - get sender pk hash from `data`.
-- if sender pk hash is not same as group connection's one then
+- if sender pk hash is not same as conference connection's one then
     - return error.
-- if `packet kind` is invite related packet type and `message id` of this packet is 3 and group connection's message id is 1 then
+- if `packet kind` is invite related packet type and `message id` of this packet is 3 and conference connection's message id is 1 then
     - return error because probably we missed handshake packet.
 - if message id is lower than current one then 
     - it is duplicated message, so we responds with ack.
@@ -389,7 +389,7 @@ When a peer receives this packet then:
 - if message id equals current one + 1 then
     - we received correct message id, so process it immediately/
     - processing packet deponds on `packet kind`, it is listed below.
-- get peer number and group connection again.
+- get peer number and conference connection again.
 - if the peer still exists and we received correct message id then
     - responds with ack.
     
@@ -416,7 +416,7 @@ variable  | Data
     GM_REMOVE_PEER          = 0x06,
     GM_REMOVE_BAN           = 0x07,
     GM_SET_MOD              = 0x08,
-    GM_SET_OBSERVER         = 0x08,
+    GM_SET_OBSERVER         = 0x09,
 ```
 
 ##### Status
@@ -437,9 +437,9 @@ Length    | Content
 
 When a peer receives this packet then:
 
-- set status of a peer in group
+- set status of a peer in conference
     - call callback of client to update status of a peer.
-    - update variable of status of a peer in group.
+    - update variable of status of a peer in conference.
     
 ##### Nickname
 
@@ -451,9 +451,9 @@ variable  | nickname(UTF-8 C String)
 
 When a peer receives this packet then:
 
-- set nickname of a peer in group
+- set nickname of a peer in conference
     - call callback of client to update nickname of a peer.
-    - update variable of nickname of a peer in group.
+    - update variable of nickname of a peer in conference.
 
 ##### Plain/Action message
 
@@ -465,7 +465,7 @@ variable  | message(UTF-8 C String)
 
 When a peer receives this packet then:
 
-- show plain/action message in group text window
+- show plain/action message in conference text window
     - call callback of client to show message.
 
 ##### Private message
@@ -478,7 +478,7 @@ variable  | message(UTF-8 C String)
 
 When a peer receives this packet then:
 
-- show private message in group text window as private mode
+- show private message in conference text window as private mode
     - call callback of client to show message as private mode.
 
 ##### Peer exit
@@ -487,15 +487,15 @@ Body of packet is not clearly defined now.
 
 When a peer receives this packet then:
 
-- delete peer number from group
-    - if connection status is (`disconnected` or `connecting` or `manually disconnected`) and private group then
+- delete peer number from conference
+    - if connection status is (`disconnected` or `connecting` or `manually disconnected`) and private conference then
         - return error.
     - if connection is handshaked but not confirmed then
         - copy PK of peer to confirmed peers list.
     - if connection is confirmed then
         - call callback to notify deleting peer to client.
     - delete tcp connection.
-    - clean up peer info in group.
+    - clean up peer info in conference.
     - decrease number of peers.
 
 ##### Remove peer
@@ -582,12 +582,12 @@ When a peer receives this packet then:
 - get target peer number using PK of target PK.
 - if target peer number is 0 then
     - call callback of client which update UI.
-    - delete all group member except founder.
+    - delete all conference member except founder.
 - if `event` is MV_BAN then
     - parse `sanction list`.
     - add sanction list.
 - call callback of client to update UI.
-- delete peer from group.
+- delete peer from conference.
 
 ##### Remove ban
 
@@ -637,9 +637,9 @@ variable    | `sanction list`(see above)
 When a peer receives this packet then:
 
 - if `kind` is not 0 then
-    - add sanction list to group.
+    - add sanction list to conference.
 -else
-    - remove sanction list from group.
+    - remove sanction list from conference.
 - call callback of client to update UI.
 
 #### Peer announce (0xf2)
@@ -669,8 +669,8 @@ When a peer receives this packet then:
 
 - if the peer is in sanction list then
     - return error.
-- add peer to group with PK and Ip, Port.
-- add and save tcp relays to group data structures.
+- add peer to conference with PK and Ip, Port.
+- add and save tcp relays to conference data structures.
 
 #### Peer info request (0xf4)
 
@@ -748,8 +748,8 @@ Length      | Content
 When a peer receives this packet then:
 
 - parse announce list.
-- add peers to group.
-- add and save tcp relays to group.
+- add peers to conference.
+- add and save tcp relays to conference.
 - if `flag` of ip port is setted and tcp relays count > 0 then
     - send handshake packet to peer.
 - set myself to `connected` status.
@@ -771,7 +771,7 @@ When a peer receives this packet then:
     - return error.
 - if the peer is banned then
     - return error.
-- if `password` is setted in group then
+- if `password` is setted in conference then
     - check the password is same, if not
         - return error.
 - send response packet.
@@ -814,8 +814,8 @@ Length      | Content
 `64`        | `signature`
 `32`        | `PK of founder`
 `4`         | `max peers`
-`2`         | `length`(of group name)
-`48`        | `group name`(UTF-8 String)
+`2`         | `length`(of conference name)
+`48`        | `conference name`(UTF-8 String)
 `1`         | `privacy state`
 `2`         | `password length`
 `32`        | `password`
@@ -966,9 +966,10 @@ variable  | Data
     GP_MESSAGE_ACK              = 0x02,
     GP_INVITE_RESPONSE_REJECT   = 0x03,
     GP_TCP_RELAYS               = 0x04,
+    GP_CUSTOM_PACKET            = 0xf1,
 ```
 
-#### Message act (0x02)
+#### Message ack (0x02)
 
 Serialized form:
 
@@ -1011,6 +1012,12 @@ When a peer receives this packet then:
 Serialized form:
 
 Length      | Content
+----------- | ------
+`variable`  | `tcp relays`
+
+An entry of `tcp relays` is
+
+Length      | Content
 ------------|-------
 `1`         | `type`(of ip)
 `4` or `16` | IPv4 or IPv6 address
@@ -1019,7 +1026,7 @@ Length      | Content
 
 When a peer receives this packet then:
 
-- add tcp relays to group connection.
+- add tcp relays to conference connection.
 
 #### Custom packet (0xf1)
 
@@ -1105,9 +1112,9 @@ Length    | Content
 
 When a peer receives this packet then:
 
-- if `state version` is older than current version or (`state verseion` is same and PK differs) then
+- if `state version` is older than current version or (`state version` is same and PK differs) then
     - return.
-- send group chat invite request packet.
+- send conference invite request packet.
 
 ##### Peer info exchange (0x01)
 
