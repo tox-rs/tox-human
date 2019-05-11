@@ -12,4 +12,4 @@ To build docs do this command
 
 See this for detailed `mdbook` [mdbook](https://github.com/rust-lang-nursery/mdBook).
 
-Already built docs can be read [here](https://tox-rs.github.io/tox-human/).
+Already built docs can be read [here](https://tox-rs.github.io/book/).
