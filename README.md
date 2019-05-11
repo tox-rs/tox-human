@@ -1,15 +1,23 @@
-# Tox Human Doc
+# Tox Human Docs
+
+[![Build Status](https://travis-ci.com/tox-rs/book.svg?branch=master)](https://travis-ci.com/tox-rs/book)
 
 This repository contains the documentation of Tox for the Tox-rs project.
 
+Already built docs can be found [HERE](https://tox-rs.github.io/book/).
+
+# For devs
+
 Install mdbook like this
 
-`cargo install mdbook`
+```bash
+cargo install mdbook
+```
 
 To build docs do this command
 
-`mdbook build`
+```bash
+mdbook build
+```
 
 See this for detailed `mdbook` [mdbook](https://github.com/rust-lang-nursery/mdBook).
-
-Already built docs can be read [here](https://tox-rs.github.io/book/).
