@@ -1,4 +1,6 @@
-# Tox Human Doc
+# Tox Human Docs
+
+[![Build Status](https://travis-ci.com/tox-rs/book.svg?branch=master)](https://travis-ci.com/tox-rs/book)
 
 This repository contains the documentation of Tox for the Tox-rs project.
 
