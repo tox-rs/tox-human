@@ -4,7 +4,7 @@ This is a description of onion layer in Tox.
 
 Onion routing can be described using this chart:
 
-![](./static/path.svg)
+![](https://tox-rs.github.io/book/static/path.svg)
 
 To send a message via an onion path, first we construct the path by choosing three random nodes. Then, we put the message in several layers:
 
@@ -96,7 +96,7 @@ A node is good to ping if this is not the last pinged node unless the node was p
 
 A sequence chart for the beginning of self announce process (messages are sent via onion):
 
-![](static/announce_start.svg)
+![](https://tox-rs.github.io/book/static/announce_start.svg)
 
 ## Friend search and DHTPK announce
 
@@ -108,7 +108,7 @@ The overall process has two steps:
 
 This is the chart of the second step:
 
-![](static/dhtpk.svg)
+![](https://tox-rs.github.io/book/static/dhtpk.svg)
 
 Specifically:
 
