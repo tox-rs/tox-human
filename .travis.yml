@@ -18,7 +18,7 @@ deploy:
   provider: pages
   skip_cleanup: true
   keep-history: false
-  local_dir: book/
+  local_dir: book/html
   github_token: $GITHUB_API_KEY
   on:
     branch: master
