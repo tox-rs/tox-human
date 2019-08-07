@@ -11,7 +11,7 @@ Already built docs can be found [HERE](https://tox-rs.github.io/book/).
 Install mdbook like this
 
 ```bash
-cargo install mdbook
+cargo install mdbook mdbook-linkcheck
 ```
 
 To build docs do this command
