@@ -1,0 +1,419 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Onion client - Tox Human Docs</title>
+        
+        
+
+
+        <!-- Custom HTML head -->
+        
+
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        
+        <link rel="icon" href="../favicon.svg">
+        
+        
+        <link rel="shortcut icon" href="../favicon.png">
+        
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        
+        <link rel="stylesheet" href="../css/print.css" media="print">
+        
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+        <link rel="stylesheet" href="../src/static/table.css">
+        
+
+        
+        <!-- MathJax -->
+        <script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../intro.html">Introduction</a></li><li class="chapter-item expanded "><a href="../crypto/crypto.html"><strong aria-hidden="true">1.</strong> Cryptography</a></li><li class="chapter-item expanded "><a href="../dht/dht.html"><strong aria-hidden="true">2.</strong> DHT</a></li><li class="chapter-item expanded "><a href="../relay/relay.html"><strong aria-hidden="true">3.</strong> TCP Relay</a></li><li class="chapter-item expanded "><a href="../onion/onion.html"><strong aria-hidden="true">4.</strong> Onion</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../onion/client.html" class="active"><strong aria-hidden="true">4.1.</strong> Onion client</a></li></ol></li><li class="chapter-item expanded "><a href="../messenger/messenger.html"><strong aria-hidden="true">5.</strong> Messenger</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../messenger/packets.html"><strong aria-hidden="true">5.1.</strong> Messenger packets</a></li><li class="chapter-item expanded "><a href="../messenger/conferences/conferences.html"><strong aria-hidden="true">5.2.</strong> Conferences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../messenger/conference/packets.html"><strong aria-hidden="true">5.2.1.</strong> Conference packets</a></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        
+                    </div>
+
+                    <h1 class="menu-title">Tox Human Docs</h1>
+
+                    <div class="right-buttons">
+                        
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        
+                        
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p>This is a description of onion layer in Tox.</p>
+<h2><a class="header" href="#paths" id="paths">Paths</a></h2>
+<p>Onion routing can be described using this chart:</p>
+<p><img src="../static/path.svg" alt="" /></p>
+<p>To send a message via an onion path, first we construct the path by choosing three random nodes. Then, we put the message in several layers:</p>
+<ol>
+<li><code>OnionRequest2</code> contains the address of the message receiver and the message encrypted with the third's node key </li>
+<li><code>OnionRequest1</code> contains the address of the second node and <code>OnionRequest2</code> encrypted with the second's node key, and</li>
+<li><code>OnionRequest0</code> contains the address of the first node and encrypted <code>OnionRequest0</code></li>
+</ol>
+<p>A node that belongs to the path receives a message, decrypts the payload, attaches <code>OnionReturn</code> and sends the result to the next node in the path.</p>
+<p>An <code>OnionReturn</code> of the n'th node is the pair of <code>IP_Port</code> and <code>OnionReturn</code> of the previous node (if it exists), encrypted with the n'th node's key. It allows the receiver to send a response to the sender using the same onion path.</p>
+<h2><a class="header" href="#client-announce" id="client-announce">Client announce</a></h2>
+<p>An iteration of self announce:</p>
+<ol>
+<li>Clean up the <code>announce_list</code> from timeouted nodes</li>
+<li>For node <code>n</code> in <code>announce_list</code>:
+<ul>
+<li>If the node is out of ping credit, skip it</li>
+<li>Check whether the node is not announced, announced or stable</li>
+<li>If it's time to send an announce request, send it to the node
+<ul>
+<li>Update time and increment <code>ping_debt</code> of the node</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>If <code>announce_list</code> is not full, choose whether we should send to a path node
+<ul>
+<li>If so, send the announce request to a random path node (ping_id = 0)</li>
+</ul>
+</li>
+</ol>
+<p>A node is considered <em>timeouted</em>  if the last ping was more than <code>NODE_TIMEOUT</code> seconds ago and the node is out of ping credit.</p>
+<p>A node is <em>out of ping credit</em> if <code>ping_debt</code> of the node is more than <code>MAX_NODE_PINGS</code>.</p>
+<p>A node is <em>announced</em> if <code>is_stored</code> is not <code>0</code> and client's <code>self_paths</code> contains a path with the <code>path_num</code> of the node. An announced node is called <em>stable</em> if the node by itself is stable and the corresponding path is stable.</p>
+<p>A node is <em>stable by itself</em> if it was added more than <code>TIME_TO_STABLE</code> seconds ago, its <code>ping_debt</code> is zero, the node was pinged less than <code>NODE_TIMEOUT</code> seconds ago.</p>
+<p>A path is called <em>stable</em> if it was created more than <code>TIME_TO_STABLE</code> seconds ago, the <code>usage_debt</code> of the path is zero and the path was not used for more than <code>PATH_TIMEOUT</code>.</p>
+<p>It is time to send an announce request if:</p>
+<ol>
+<li>A node was pinged more than <code>interval</code> seconds ago, where <code>interval</code> is one of <code>ANNOUNCE_INTERVAL_NOT_ANNOUNCED</code>, <code>ANNOUNCE_INTERVAL_ANNOUNCED</code>, <code>ANNOUNCE_INTERVAL_STABLE</code>, depending on the node type</li>
+<li>Or the last announce was more than <code>NODE_PING_INTERVAL</code> seconds ago and <code>random(MAX_ONION_CLIENTS_ANNOUNCE - i) == 0</code>, where <code>i</code> is the index of the node in the <code>announce_list</code></li>
+</ol>
+<p>The process of sending a self announce request to a node is the following:</p>
+<ol>
+<li>First, get a random path with a given <code>path_num</code>.</li>
+<li>Store a sendback in <code>announce_ping_array</code>, getting the sendback_id</li>
+<li>Construct an announce request payload with
+<ul>
+<li><code>search_id = real_pk</code></li>
+<li><code>data_pk = temp_pk</code></li>
+<li><code>ping_id = ping_id</code></li>
+<li><code>sendback_data = sendback_id</code>
+<ul>
+<li>Where <code>real_pk</code> is the real public key, <code>temp_pk</code> is the temporary public key of the onion client.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>The payload is encrypted using <code>{dest_pk, real_sk}</code>, where <code>dest_pk</code> is the public key of the destination, <code>real_sk</code> is the real secret key</li>
+<li>Construct the request with the payload and <code>{pk = real_pk}</code></li>
+<li>Send the request via the onion path</li>
+</ol>
+<p>Getting a random path:</p>
+<ol>
+<li>If <code>path_num</code> is not <code>None</code>, set <code>path_index = path_num % NUMBER_ONION_PATHS</code>. Otherwise, set <code>path_index = random(0..NUMBER_ONION_PATHS)</code></li>
+<li>If <code>path_list[path_index]</code> is timed out or doesn't exist:
+<ol>
+<li>Get <code>ONION_PATH_LENGTH</code> random path nodes</li>
+<li>Check whether the last node belongs to some path</li>
+<li>If yes, then use that path</li>
+<li>If not:
+<ol>
+<li>Create a new onion path</li>
+<li>Set times for the path</li>
+<li>Set <code>path_num = r(random_u32(), NUMBER_ONION_PATHS) + path_index</code>, where \(r(a, n) = a - (a \bmod n)\) – a “modulo rounding” function</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>Otherwise, just use the existing path</li>
+<li>If the path is not out of usage credit, update <code>last_path_used</code></li>
+<li>Increment the usage debt of the path</li>
+<li>Return the path</li>
+</ol>
+<p>An announce response is handled in the following way:</p>
+<ol>
+<li>Get the sendback from <code>announce_ping_array</code> using the <code>sendback_data</code></li>
+<li>Decrypt the payload using <code>{sb.node.pk, real_sk}</code>, where <code>sb.node.pk</code> is the public key stored in the sendback, <code>real_sk</code> is the real secret key</li>
+<li>Set path timeouts using <code>{sb.friend_num, sb.path_num}</code></li>
+<li>Add the announce node to <code>announce_list</code></li>
+<li>Add the node to <code>path_nodes</code></li>
+<li>Get nodes from the payload and ping them (if any)</li>
+</ol>
+<p>The process of pinging a node is the following:</p>
+<ol>
+<li>Clean up <code>announce_list</code> from timeouted nodes</li>
+<li>A node in the payload is pinged if:
+<ol>
+<li>It is closer to us than nodes in the <code>announce_list</code> or the list is not full</li>
+<li>And it doesn't belong to the list</li>
+<li>And it is good to ping</li>
+</ol>
+</li>
+<li>Pinging is sending an announce request with <code>ping_id = 0</code> via a random path</li>
+</ol>
+<p>A node is good to ping if this is not the last pinged node unless the node was pinged more than <code>MIN_NODE_PING_TIME</code> ago.</p>
+<p>A sequence chart for the beginning of self announce process (messages are sent via onion):</p>
+<p><img src="../static/announce_start.svg" alt="" /></p>
+<h2><a class="header" href="#friend-search-and-dhtpk-announce" id="friend-search-and-dhtpk-announce">Friend search and DHTPK announce</a></h2>
+<p>The overall process has two steps:</p>
+<ul>
+<li>First, we use announce requests to find announce nodes that stores paths to our friend
+<ul>
+<li>This process is similar to the announce process</li>
+</ul>
+</li>
+<li>Then, we send (via onion) <code>DataRequest</code> to found announce nodes</li>
+</ul>
+<p>This is the chart of the second step:</p>
+<p><img src="../static/dhtpk.svg" alt="" /></p>
+<p>Specifically:</p>
+<ol>
+<li>We start with constructing <code>DhtPkData</code>:
+<ul>
+<li><code>no_replay = now</code> where <code>now</code> is the current time</li>
+<li><code>dht_pk = dht_pk</code> where <code>dht_pk</code> is our dht public key</li>
+<li><code>nodes = closest</code> where <code>closest</code> is a list of closest to us dht nodes</li>
+</ul>
+</li>
+<li>Serialize it into bytes and send as an onion data or via dht</li>
+</ol>
+<p>The process of sending onion data is the following:</p>
+<ol>
+<li>The <code>client_list</code> of a friend is cleaned up of timeouted nodes</li>
+<li>Good nodes are with <code>is_stored != 0</code></li>
+<li>It should be more than <code>(num_nodes - 1) / 4 + 1</code> good nodes to continue where <code>num_nodes</code> is the number of nodes in <code>client_list</code></li>
+<li>Generate a random nonce</li>
+<li>The data is encrypted using friend's real public key, our real secret key and the nonce</li>
+<li>Construct <code>OnionData</code>:
+<ul>
+<li><code>real_pk</code> is our real public key</li>
+<li><code>dht_pk_data</code> is the encrypted data</li>
+</ul>
+</li>
+<li>For each good node:
+<ol>
+<li>Get a random friend path</li>
+<li>Construct a <code>DataRequest</code>:
+<ul>
+<li><code>dest_pk = friend.real_pk</code></li>
+<li><code>nonce = nonce</code>. The same nonce that we used before</li>
+<li><code>temp_pk = random_pk</code>. We generate a random keypair</li>
+<li>The <code>payload</code> is the onion data encryped with the node's data public key and the random secret key, using the same <code>nonce</code></li>
+</ul>
+</li>
+<li>Send the request via the onion path</li>
+</ol>
+</li>
+</ol>
+<h2><a class="header" href="#notes-on-data-structures" id="notes-on-data-structures">Notes on data structures</a></h2>
+<p>Both <code>path_nodes</code> and <code>announce_list</code> are arrays of limited size. But the way they are updated are different.</p>
+<p>When <code>path_nodes</code> is full, adding a new element replaces an old one in a circular manner: first adding an element replaces <code>path_nodes[0]</code>, then <code>path_nodes[1]</code>, and so on til we get to the end of the array. After that, we begin again with <code>path_nodes[0]</code>.</p>
+<p><code>announce_list</code> is different. It is sorted by distance to real our public key. When an element is added, it is checked against the farest node. If the element is closer to us than the node, the node is removed and the element is inserted. Otherwise, the element is simply discarded.</p>
+<p>Some packet data structures:</p>
+<pre><code>struct DhtPkData {
+    no_replay: u64,
+    dht_pk: PublicKey,
+    nodes: Vec&lt;PackedNode&gt;,
+}
+
+layout DhtPkData {
+    u8 = ONION_DATA_DHTPK,
+    u64,
+    [u8; PUBLIC_KEY_SIZE],
+    [[u8; PACKED_NODE_SIZE]; 0..MAX_SENT_NODES]
+}
+</code></pre>
+<h2><a class="header" href="#toxcore-notes" id="toxcore-notes">Toxcore notes</a></h2>
+<p>In the C implementation, <code>ping_debt</code> and <code>usage_debt</code> are called <code>unsuccessful_pings</code> and <code>last_path_used_times</code> correspondingly. New names are chosen to represent the meaning of these variables more clearly.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../onion/onion.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../messenger/messenger.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a rel="prev" href="../onion/onion.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a rel="next" href="../messenger/messenger.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

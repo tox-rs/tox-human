@@ -1,0 +1,10 @@
+msc {
+  c [label="Client"],
+  a [label="Announce node"],
+  f [label="Friend"];
+
+  c -> a [label="DataRequest"];
+  a -> f [label="DataResponse"];
+  |||;
+  c .. f [label="Connect to a friend directly"];
+}
